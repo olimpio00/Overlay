@@ -1,0 +1,27 @@
+.git
+.github
+.vscode
+.idea
+
+# State / runtime
+config.json
+sessions.json
+data/
+__debug**
+
+# Local binaries
+iros
+iros.exe
+meta/build/
+
+# Docs (mantém só o README — restante é só pra leitura no GitHub)
+*.md
+!README.md
+
+# Scripts privados upstream
+meta/deploy.py
+meta/update-server.sh
+
+# Env
+.env
+.env.local

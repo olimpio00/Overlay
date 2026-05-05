@@ -1,0 +1,17 @@
+services:
+  iros:
+    build: .
+    image: iros:local
+    container_name: iros
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      # Sobrescritas opcionais para teste local. Comente o que não precisar.
+      IROS_HTTP_ADDRESS: "0.0.0.0"
+      # IROS_API_TOKEN: "troque-por-um-token-secreto"
+      # IROS_SERVER_DOMAIN: "localhost:8080"
+      # IROS_USE_WSS: "false"
+      # PORT: "8080"
+    restart: unless-stopped

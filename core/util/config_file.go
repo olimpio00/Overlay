@@ -24,6 +24,7 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+	"strconv"
 )
 
 type Config struct {
@@ -124,6 +125,31 @@ func LoadConfig(path string) {
 		err = enc.Encode(Cfg)
 		if err != nil {
 			log.Fatal(err)
+		}
+	}
+
+	applyEnvOverrides()
+}
+
+// applyEnvOverrides lets hosting platforms (Render, Fly, etc.) inject runtime
+// settings via environment variables. Runs after file IO so values never get
+// persisted back to config.json.
+func applyEnvOverrides() {
+	if v := os.Getenv("IROS_API_TOKEN"); v != "" {
+		Cfg.APIToken = v
+	}
+	if v := os.Getenv("IROS_SERVER_DOMAIN"); v != "" {
+		Cfg.ServerDomain = v
+	}
+	if v := os.Getenv("IROS_HTTP_ADDRESS"); v != "" {
+		Cfg.HTTPServerAddress = v
+	}
+	if v := os.Getenv("IROS_USE_WSS"); v != "" {
+		Cfg.UseWSS = v == "true" || v == "1"
+	}
+	if v := os.Getenv("PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			Cfg.HTTPPort = p
 		}
 	}
 }

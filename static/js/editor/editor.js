@@ -176,14 +176,18 @@ class editor extends viewer {
     }
 
     // Draw resize handles for selected element only if it's valid and visible
-    if (
-      this.selected_element &&
-      this.selected_element.html &&
-      this.selected_element.is_resizable &&
-      this.selected_element.is_resizable()
-    ) {
+    if (this.selected_element) {
+      // Diagnostic logs for production debugging
+      let checks = {
+        has_html: !!this.selected_element.html,
+        has_is_resizable_fn: typeof this.selected_element.is_resizable === 'function',
+        is_resizable_result: this.selected_element.is_resizable ? this.selected_element.is_resizable() : false
+      };
       let tf = this.selected_element.tf();
-      if (tf.width > 0 && tf.height > 0 && this.selected_element.tf().visible) {
+      checks.tf_valid = tf && tf.width > 0 && tf.height > 0;
+      checks.tf_visible = tf && this.selected_element.tf().visible;
+      
+      if (checks.has_html && checks.has_is_resizable_fn && checks.is_resizable_result && checks.tf_valid && checks.tf_visible) {
         draw_resize_handles(
           this.ctx,
           tf.x,
@@ -193,6 +197,14 @@ class editor extends viewer {
           this.editor_zoom,
           this.editor_offset
         );
+      } else {
+        // Log why handles are not drawing (rate-limited)
+        let now = Date.now();
+        if (!window.__last_draw_mode_log) window.__last_draw_mode_log = 0;
+        if (now - window.__last_draw_mode_log > 2000) {
+          window.__last_draw_mode_log = now;
+          console.log('[draw_mode_overlay] handles skipped:', checks);
+        }
       }
     }
   }

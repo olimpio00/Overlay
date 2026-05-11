@@ -22,9 +22,6 @@ let __last_debug_handles_log = 0;
 function draw_resize_handles(ctx, x, y, width, height, zoom, offset) {
   ctx.save();
   
-  // Log that function was called (always, for debugging production)
-  console.log('[draw_resize_handles] called', { x, y, width, height, zoom, offset });
-  
   // Calculate screen positions
   // The editor normalizes mouse coords into world coordinates and the canvas
   // internal coordinate space matches world coords. Do not apply zoom/offset

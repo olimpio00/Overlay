@@ -17,8 +17,6 @@
 
 const RESIZE_HANDLE_SIZE = 15;
 const RESIZE_DETECTION_RADIUS = 20; // Larger radius for easier clicking
-// Debug toggle via ?debug_handles=1 (only logs at most twice per second)
-const DEBUG_HANDLES = (typeof window !== 'undefined') && new URLSearchParams(window.location.search).has('debug_handles');
 let __last_debug_handles_log = 0;
 
 function draw_resize_handles(ctx, x, y, width, height, zoom, offset) {
@@ -65,16 +63,16 @@ function draw_resize_handles(ctx, x, y, width, height, zoom, offset) {
 
   ctx.restore();
 
-  // Optional debug logging (rate-limited)
-  if (DEBUG_HANDLES) {
+  // Debug logging (rate-limited) - always active
+  try {
     let now = Date.now();
     if (now - __last_debug_handles_log > 500) {
       __last_debug_handles_log = now;
-      try {
-        let edt = window.edt;
-        console.log('[debug_handles] draw', { zoom: zoom, offset: offset, tf: {x,y,width,height}, editor_zoom: edt && edt.editor_zoom, editor_offset: edt && edt.editor_offset });
-      } catch (e) {}
+      let edt = window.edt;
+      console.log('[debug_handles] draw', { zoom: zoom, offset: offset, tf: { x, y, width, height }, editor_zoom: edt && edt.editor_zoom, editor_offset: edt && edt.editor_offset });
     }
+  } catch (e) {
+    // swallow errors
   }
 }
 

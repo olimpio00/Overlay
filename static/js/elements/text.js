@@ -26,16 +26,28 @@ class text_element extends element {
   }
 
   update() {
+    this.data.transition_mode = this.data.transition_mode || 'fade';
+    let mode = this.data.transition_mode;
+    let fade_show = mode === 'fade' || mode === 'fade-in';
+    let fade_hide = mode === 'fade' || mode === 'fade-out';
+    let duration = this.data.transition_duration != null ? this.data.transition_duration : 500;
+    this.html.style.setProperty('--fade-duration', duration + 'ms');
     if (this.tf().visible) {
       this.html.classList.remove('hidden');
       this.html.classList.remove('fade-out');
-      this.html.classList.add('fade-in');
+      if (fade_show) this.html.classList.add('fade-in');
+      else this.html.classList.remove('fade-in');
     } else {
       this.html.classList.remove('fade-in');
-      this.html.classList.add('fade-out');
-      setTimeout(() => {
-        if (this.html != null) this.html.classList.add('hidden');
-      }, 500);
+      if (fade_hide) {
+        this.html.classList.add('fade-out');
+        setTimeout(() => {
+          if (this.html != null) this.html.classList.add('hidden');
+        }, Math.max(0, duration - 20));
+      } else {
+        this.html.classList.add('hidden');
+        this.html.classList.remove('fade-out');
+      }
     }
     this.html.style.zIndex = this.tf().z_index;
     this.html.style.opacity = this.tf().opacity;

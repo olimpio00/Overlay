@@ -15,6 +15,19 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+function build_ws_url() {
+    let endpoint = '/ws';
+    try {
+        if (config && config.WEBSOCKET_URL) {
+            endpoint = new URL(config.WEBSOCKET_URL).pathname || '/ws';
+        }
+    } catch (e) {
+        console.warn('[viewer] failed to parse config.WEBSOCKET_URL, using /ws', e);
+    }
+    let proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${proto}://${window.location.host}${endpoint}`;
+}
+
 class viewer {
     constructor(container) {
         this.container = container;
@@ -24,7 +37,7 @@ class viewer {
         this.connected = false;
         this.id = Math.random().toString(36).substring(7);
 
-        this.socket = new WebSocket(config.WEBSOCKET_URL);
+        this.socket = new WebSocket(build_ws_url());
         this.socket.onopen = e => this.on_open(e);
         this.socket.onmessage = e => this.on_data(e);
         this.socket.onclose = e => this.on_close(e);
@@ -87,7 +100,7 @@ class viewer {
         this.connected = false;
         this.on_connection_changed();
         setTimeout(() => {
-            this.socket = new WebSocket(config.WEBSOCKET_URL);
+            this.socket = new WebSocket(build_ws_url());
             this.socket.onopen = e => this.on_open(e);
             this.socket.onmessage = e => this.on_data(e);
             this.socket.onclose = e => this.on_close(e);
@@ -97,25 +110,31 @@ class viewer {
 
     on_open(e) {
         this.connected = true;
+        console.log('[viewer] WS open, sending handshake', { session: this.session_id });
         this.socket.send(JSON.stringify({ session: this.session_id }));
         this.on_connection_changed();
     }
 
     on_data(e) {
-        let data = JSON.parse(e.data);
+        let data;
+        try {
+            data = JSON.parse(e.data);
+        } catch (err) {
+            console.error('[viewer] failed to parse message', err, e.data);
+            return;
+        }
         if (data.error !== undefined) {
+            console.error('[viewer] server error', data.error);
             alert(data.error);
             return;
         } else if (data.type === undefined) {
-            // remove all elements
+            console.log('[viewer] initial state received', Object.keys(data).length, 'elements');
             this.elements.forEach(element => command_delete_element(this, element));
-
-            // iterate over elements in data object
             for (const [_, args] of Object.entries(data)) {
                 command_add_element(this, args);
             }
-
         } else {
+            console.log('[viewer] command', data.type, data.args && data.args.id);
             this.parse_and_run_command(data, this);
         }
     }

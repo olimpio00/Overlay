@@ -28,6 +28,8 @@ class element {
     constructor(parent, type, data) {
         this.data = {
             id: undefined,
+            transition_mode: 'fade',
+            transition_duration: 500,
             transform: {
                 x: 0, y: 0, width: 0, height: 0,
                 rotation_x: 0, rotation_y: 0, rotation_z: 0,
@@ -90,6 +92,12 @@ class element {
 
     update() {
         if (this.html != null) {
+            this.data.transition_mode = this.data.transition_mode || 'fade';
+            let mode = this.data.transition_mode;
+            let fade_show = mode === 'fade' || mode === 'fade-in';
+            let fade_hide = mode === 'fade' || mode === 'fade-out';
+            let duration = this.data.transition_duration != null ? this.data.transition_duration : 500;
+            this.html.style.setProperty('--fade-duration', duration + 'ms');
             this.html.style.transform = this.build_transform();
             if (this.tf().width > 0 && this.tf().height > 0) {
                 this.html.style.width = this.tf().width + "px";
@@ -101,14 +109,20 @@ class element {
             if (this.tf().visible) {
                 this.html.classList.remove("hidden");
                 this.html.classList.remove("fade-out");
-                this.html.classList.add("fade-in");
+                if (fade_show) this.html.classList.add("fade-in");
+                else this.html.classList.remove("fade-in");
             } else {
                 this.html.classList.remove("fade-in");
-                this.html.classList.add("fade-out");
-                setTimeout(() => {
-                    if (this.html != null)
-                        this.html.classList.add("hidden");
-                }, 480);
+                if (fade_hide) {
+                    this.html.classList.add("fade-out");
+                    setTimeout(() => {
+                        if (this.html != null)
+                            this.html.classList.add("hidden");
+                    }, Math.max(0, duration - 20));
+                } else {
+                    this.html.classList.add("hidden");
+                    this.html.classList.remove("fade-out");
+                }
             }
         }
 

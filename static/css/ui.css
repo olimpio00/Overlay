@@ -50,7 +50,7 @@
 #element-list-window {
     top: 20px;
     right: 0px;
-    width: 130px;
+    width: 220px;
 }
 
 #elements {
@@ -59,6 +59,44 @@
 
 #elements button {
     max-width: 37px;
+}
+
+#add-7tv-button,
+#add-bttv-button {
+    position: relative;
+    border-bottom: 3px solid transparent;
+}
+
+#add-7tv-button {
+    border-bottom-color: #29D391;
+}
+
+#add-bttv-button {
+    border-bottom-color: #D50014;
+}
+
+#add-7tv-button::after,
+#add-bttv-button::after {
+    position: absolute;
+    bottom: 3px;
+    right: 2px;
+    font-size: 8px;
+    font-weight: bold;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 3px;
+    color: #fff;
+    pointer-events: none;
+}
+
+#add-7tv-button::after {
+    content: "7TV";
+    background: #29D391;
+}
+
+#add-bttv-button::after {
+    content: "BTTV";
+    background: #D50014;
 }
 
 .window h1 {
@@ -185,6 +223,75 @@
 
 #element-list-select {
     width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #2e2e2e;
+    border-radius: 3px;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.element-list-row {
+    display: grid;
+    grid-template-columns: 1fr min-content min-content;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    color: #e0e0e0;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.element-list-row:hover {
+    background: #4a4a4a;
+}
+
+.element-list-row.selected {
+    background: #5a5a5d;
+    color: #fff;
+}
+
+.element-list-row.element-hidden .element-list-label {
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.element-list-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.element-list-icon {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    width: 22px;
+    height: 22px;
+    box-sizing: border-box;
+}
+
+.element-list-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.element-list-trash:hover {
+    background: rgba(213, 0, 20, 0.3);
+    color: #ff6666;
+}
+
+.element-list-row.element-hidden .element-list-eye {
+    color: #888;
 }
 
 #element-name {
@@ -199,7 +306,8 @@
 #event-settings,
 #media-settings,
 #timer-settings,
-#background-color-settings {
+#background-color-settings,
+#menu-settings {
     display: grid;
     grid-gap: 4px;
     margin-bottom: 4px;
@@ -228,6 +336,33 @@
 #timer-settings,
 #background-color-settings {
     display: none;
+}
+
+#menu-settings {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+#menu-settings label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+
+#transition-mode,
+#rotation-snap {
+    grid-column: 2 / span 3;
+}
+
+#layer-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+#layer-controls button {
+    width: 100%;
 }
 
 #text {
@@ -345,12 +480,22 @@
 }
 
 #modal-container .window {
-    width: 50vw;
-    height: 70vh;
+    width: clamp(320px, 60vw, 800px);
+    height: clamp(400px, 70vh, 700px);
+    max-width: 95vw;
+    max-height: 90vh;
+    box-sizing: border-box;
 
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+@media (max-width: 768px) {
+    #modal-container .window {
+        width: 95vw;
+        height: 85vh;
+    }
 }
 
 #modal-container.visible {
@@ -384,25 +529,141 @@
 }
 
 #emote-search-header,
+#bttv-search-header,
 #favorites-header {
     cursor: default;
 }
 
 #emote-search-modal,
+#bttv-search-modal,
+#image-upload-modal,
+#audio-upload-modal,
+#video-upload-modal,
 #favorites-modal {
     display: grid;
-    grid-template-rows: min-content min-content 1fr;
+    grid-template-rows: min-content 1fr;
     gap: 8px;
     display: none;
+}
+
+#emote-search-modal,
+#bttv-search-modal {
+    grid-template-rows: min-content min-content 1fr;
 }
 
 #emote-search {
     display: grid;
     grid-template-columns: 1fr fit-content(200px);
     gap: 4px;
+    align-items: center;
+}
+
+#emote-search-input,
+#bttv-search-input {
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.emote-search-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #bbb;
+    padding: 24px 12px;
+    font-size: 13px;
+    user-select: none;
+}
+
+#emote-search-button,
+#bttv-search-button {
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.media-upload-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    height: 100%;
+    padding: 16px 0;
+    box-sizing: border-box;
+}
+
+.media-upload-url-section,
+.media-upload-file-section {
+    display: grid;
+    grid-template-rows: min-content min-content 1fr;
+    gap: 10px;
+    align-content: start;
+    min-width: 0;
+}
+
+.media-upload-url-section h3,
+.media-upload-file-section h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.media-upload-url-input {
+    width: 100%;
+    height: 30px;
+    box-sizing: border-box;
+}
+
+.media-upload-url-button {
+    width: 100%;
+    height: 35px;
+    cursor: pointer;
+    background: #7a7a7d;
+}
+
+.media-upload-url-button:hover {
+    background: #939396;
+}
+
+.media-upload-file-input {
+    display: none;
+}
+
+.media-upload-file-label {
+    border: 2px dashed #939396;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    background: #5a5a5d;
+    transition: all 0.2s;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+.media-upload-file-label:hover {
+    background: #6c6d71;
+    border-color: #ffffff66;
+}
+
+.media-upload-file-label.drag-over {
+    background: #7a7a7d;
+    border-color: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .media-upload-container {
+        grid-template-columns: 1fr;
+        grid-auto-rows: min-content;
+        gap: 20px;
+        overflow-y: auto;
+    }
 }
 
 #emote-search-results,
+#bttv-search-results,
 #favorites-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

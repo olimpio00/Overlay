@@ -17,12 +17,49 @@
 
 var moving_window = null;
 var move_offset = [];
+var menu_button_map = [
+    ["toggle-add-text-button", "add-text-button"],
+    ["toggle-add-image-button", "add-image-button"],
+    ["toggle-add-timer-button", "add-timer-button"],
+    ["toggle-add-audio-button", "add-audio-button"],
+    ["toggle-add-video-button", "add-video-button"],
+    ["toggle-add-iframe-button", "add-iframe-button"],
+    ["toggle-add-7tv-button", "add-7tv-button"],
+    ["toggle-add-bttv-button", "add-bttv-button"],
+    ["toggle-add-favorite-button", "add-favorite-button"],
+];
+
+function apply_menu_visibility(visibility_map = {}) {
+    for (let [checkbox_id, button_id] of menu_button_map) {
+        let checkbox = $(`#${checkbox_id}`);
+        let button = $(`#${button_id}`);
+        let visible = visibility_map[button_id];
+        if (visible === undefined) visible = true;
+        if (checkbox) checkbox.checked = visible;
+        if (button) button.style.display = visible ? "" : "none";
+    }
+}
+
+function read_menu_visibility() {
+    let visibility_map = {};
+    for (let [checkbox_id, button_id] of menu_button_map) {
+        let checkbox = $(`#${checkbox_id}`);
+        visibility_map[button_id] = checkbox ? checkbox.checked : true;
+    }
+    return visibility_map;
+}
 
 $(document).ready(() => {
     ["#settings", "#element-list"].forEach((id) => {
         $(`${id}-header`).on("mousedown", (e) => {
             moving_window = $(`${id}-window`);
             move_offset = [e.clientX - moving_window.offsetLeft, e.clientY - moving_window.offsetTop];
+        });
+    });
+    menu_button_map.forEach(([checkbox_id]) => {
+        $(`#${checkbox_id}`).on("change", () => {
+            apply_menu_visibility(read_menu_visibility());
+            save_settings();
         });
     });
     $(document).on("mouseup", () => {
@@ -66,10 +103,15 @@ function load_settings() {
             $(`#canvas-width`).value = settings.canvas_width;
         if (!canvas_height)
             $(`#canvas-height`).value = settings.canvas_height;
+        if (settings.rotation_snap_step !== undefined)
+            $(`#rotation-snap`).value = settings.rotation_snap_step;
         if (!embed_url) {
             $(`#embed-url`).value = settings.stream_url;
             embed_player();
         }
+        apply_menu_visibility(settings.menu_visibility || {});
+    } else {
+        apply_menu_visibility({});
     }
 }
 
@@ -81,5 +123,7 @@ function save_settings() {
     settings.canvas_width = $(`#canvas-width`).value;
     settings.canvas_height = $(`#canvas-height`).value;
     settings.stream_url = $(`#embed-url`).value;
+    settings.rotation_snap_step = $(`#rotation-snap`).value;
+    settings.menu_visibility = read_menu_visibility();
     localStorage.setItem('settings', JSON.stringify(settings));
 }

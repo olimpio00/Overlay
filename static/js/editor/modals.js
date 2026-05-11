@@ -20,13 +20,14 @@ var active_modal = null;
 
 $(document).ready(() => {
     modal_container = $("#modal-container");
-    $(modal_container).on("click", function (event) {
-        if (event.target == modal_container) {
-            close_modal();
+    modal_container.addEventListener("click", function (event) {
+        if (event.target !== modal_container) {
+            return;
         }
+        close_modal();
     });
-    $(modal_container).on("keydown", function (event) {
-        if (event.key === "Escape") {
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && active_modal) {
             close_modal();
         }
     });

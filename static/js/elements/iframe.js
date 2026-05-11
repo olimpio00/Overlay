@@ -36,7 +36,7 @@ class iframe_element extends element {
   }
 
   set_url(url) {
-    if (this.iframe.src == url) return false;
+    url = normalize_url_input(url);
 
     // validate url by turning it into a URL object
     try {
@@ -126,6 +126,7 @@ function add_iframe_element(
   height = 360
 ) {
   if (url === null) url = 'https://example.com';
+  url = normalize_url_input(url);
   if (name === null) name = `Iframe ${edt.get_next_element_id()}`;
   let data = {
     url,

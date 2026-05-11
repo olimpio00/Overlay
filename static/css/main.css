@@ -67,11 +67,12 @@ iros-media-element {
 }
 
 .iros-element.fade-in {
-    animation: fade-in 0.5s;
+    animation: fade-in var(--fade-duration, 0.5s);
 }
 
 .iros-element.fade-out {
-    animation: fade-out 0.5s;
+    animation: fade-out var(--fade-duration, 0.5s);
+    animation-fill-mode: forwards;
 }
 
 @keyframes fade-in {

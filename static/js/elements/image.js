@@ -29,6 +29,8 @@ class image_element extends element {
     }
 
     set_url(url) {
+        url = normalize_url_input(url);
+        if (url === '') return;
         this.html.src = url;
         this.data.url = url;
     }
@@ -54,8 +56,9 @@ class image_element_handler extends element_handler {
 
     update_selected_element() {
         if (this.selected_element) {
-            check_dc(this.url.value);
-            this.selected_element.set_url(this.url.value);
+            let url = normalize_url_input(this.url.value);
+            check_dc(url);
+            this.selected_element.set_url(url);
             send_command_update_element(this.edt, this.selected_element);
         }
     }
@@ -75,6 +78,7 @@ class image_element_handler extends element_handler {
 function add_image_element(url = null, name = null, width = 100, height = 100) {
     if (url === null)
         url = `${document.location.origin}${config.ROOT}/static/img/empty.png`
+    url = normalize_url_input(url);
     if (name === null)
         name = `Image ${edt.get_next_element_id()}`;
     let data = {

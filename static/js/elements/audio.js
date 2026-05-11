@@ -87,6 +87,7 @@ class audio_element extends element {
     }
 
     set_url(url) {
+        url = normalize_url_input(url);
         if (url == this.data.url)
             return;
 
@@ -189,8 +190,9 @@ class audio_element_handler extends element_handler {
 
     update_selected_element() {
         if (this.selected_element) {
-            check_dc(this.url.value);
-            this.selected_element.set_url(this.url.value);
+            let url = normalize_url_input(this.url.value);
+            check_dc(url);
+            this.selected_element.set_url(url);
             this.selected_element.data.volume = this.volume.value / 100.0;
             this.selected_element.set_playback_rate(this.playback_rate.value / 100.0);
             this.selected_element.set_native_controls(this.native_controls.checked);
@@ -218,6 +220,7 @@ class audio_element_handler extends element_handler {
 function add_audio_element(url = null, name = null, width = 300, height = 50) {
     if (url === null)
         url = "";
+    url = normalize_url_input(url);
     if (name === null)
         name = `Audio ${edt.get_next_element_id()}`;
     let data = {

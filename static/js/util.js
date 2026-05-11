@@ -187,6 +187,20 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function snap_value(value, step) {
+  if (!step || step <= 1) return value;
+  return Math.round(value / step) * step;
+}
+
+function normalize_url_input(url) {
+  if (url == undefined) return '';
+  let value = String(url).trim();
+  if (value === '') return '';
+  if (/^(https?:|data:|blob:|file:|about:|chrome-extension:)/i.test(value)) return value;
+  if (value.startsWith('//')) return `https:${value}`;
+  return `https://${value}`;
+}
+
 function uuidv4() {
   return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
     (

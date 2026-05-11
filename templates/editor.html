@@ -37,6 +37,10 @@
     <script src="./static/js/editor/settings_ui.js"></script>
     <script src="./static/js/editor/modals.js"></script>
     <script src="./static/js/editor/7tv.js"></script>
+    <script src="./static/js/editor/bttv.js"></script>
+    <script src="./static/js/editor/image_upload.js"></script>
+    <script src="./static/js/editor/media_upload.js"></script>
+    <script src="./static/js/editor/resize_visual.js"></script>
     <script src="./static/js/editor/favorites.js"></script>
     <script src="./static/js/elements/element.js"></script>
     <script src="./static/js/elements/text.js"></script>
@@ -69,22 +73,36 @@
                 <h1>Settings</h1>
             </div>
             <div id="elements">
-                <button onclick="add_text_element()" title="Add text"><img id="text-icon"
+                <button id="add-text-button" onclick="add_text_element()" title="Add text"><img id="text-icon"
                         src="./static/img/add-text.svg" /></button>
-                <button onclick="add_image_element()" title="Add image"><img id="image-icon"
+                <button id="add-image-button" onclick="open_image_upload_modal()" title="Add image"><img id="image-icon"
                         src="./static/img/add-image.svg" /></button>
-                <button onclick="add_timer_element()" title="Add timer"><img id="timer-icon"
+                <button id="add-timer-button" onclick="add_timer_element()" title="Add timer"><img id="timer-icon"
                         src="./static/img/add-timer.svg" /></button>
-                <button onclick="add_audio_element()" title="Add audio"><img id="audio-icon"
+                <button id="add-audio-button" onclick="open_audio_upload_modal()" title="Add audio"><img id="audio-icon"
                         src="./static/img/add-audio.svg" /></button>
-                <button onclick="add_video_element()" title="Add video"><img id="audio-icon"
+                <button id="add-video-button" onclick="open_video_upload_modal()" title="Add video"><img id="audio-icon"
                         src="./static/img/add-video.svg" /></button>
-                <button onclick="add_iframe_element()" title="Add iframe"><img id="audio-icon"
+                <button id="add-iframe-button" onclick="add_iframe_element()" title="Add iframe"><img id="audio-icon"
                         src="./static/img/add-iframe.svg" /></button>
-                <button onclick="open_modal(emote_search_modal)" title="Add 7tv Emote"><img id="emote-icon"
+                <button id="add-7tv-button" onclick="open_modal(emote_search_modal)" title="Add 7tv Emote"><img id="emote-icon"
                         src="./static/img/add-emote.svg" /></button>
-                <button onclick="open_modal(favorites_modal)" title="Add favorite"><img id="favorite-icon"
+                <button id="add-bttv-button" onclick="open_modal(bttv_search_modal)" title="Add BTTV Emote"><img id="bttv-icon"
+                        src="./static/img/add-emote.svg" /></button>
+                <button id="add-favorite-button" onclick="open_modal(favorites_modal)" title="Add favorite"><img id="favorite-icon"
                         src="./static/img/add-favorite.svg" /></button>
+            </div>
+            <div id="menu-settings">
+                <h1>Menu</h1>
+                <label><input type="checkbox" id="toggle-add-text-button">Text</label>
+                <label><input type="checkbox" id="toggle-add-image-button">Image</label>
+                <label><input type="checkbox" id="toggle-add-timer-button">Timer</label>
+                <label><input type="checkbox" id="toggle-add-audio-button">Audio</label>
+                <label><input type="checkbox" id="toggle-add-video-button">Video</label>
+                <label><input type="checkbox" id="toggle-add-iframe-button">Iframe</label>
+                <label><input type="checkbox" id="toggle-add-7tv-button">7TV</label>
+                <label><input type="checkbox" id="toggle-add-bttv-button">BTTV</label>
+                <label><input type="checkbox" id="toggle-add-favorite-button">Favorite</label>
             </div>
             <div id="canvas-header">
                 <h1>Canvas</h1>
@@ -106,6 +124,8 @@
                 <label id="player-interaction-lable" for="player-interaction"
                     title="Allows interaction with stream player, e.g. for changing volume or quality">Interactive
                     player</label>
+                <label for="rotation-snap" title="Rotation snap angle in degrees">Rotate snap</label>
+                <input type="number" name="rotation-snap" id="rotation-snap" min="0" step="1" value="15" title="Rotation snap angle in degrees">
             </div>
 
             <div id="element-header">
@@ -136,6 +156,18 @@
 
                 <img id="visibility-label" src="./static/img/visible.svg" title="Visiblity of element" />
                 <input type="checkbox" name="visibility" id="visibility" title="Visiblity of element">
+
+                <label for="transition-mode" title="Show/hide transition">Transition</label>
+                <select id="transition-mode" title="Show/hide transition">
+                    <option value="fade">Fade In/Out</option>
+                    <option value="fade-in">Fade In only</option>
+                    <option value="fade-out">Fade Out only</option>
+                    <option value="cut">Cut</option>
+                </select>
+
+                <label for="transition-duration" title="Transition duration (ms)">Duration (ms)</label>
+                <input type="number" id="transition-duration" min="0" max="5000" step="50" value="500" title="Transition duration in milliseconds">
+
 
                 <img id="pivot-label" src="./static/img/pivot.svg" title="Pivot point of element" />
                 <div id="pivot-select">
@@ -236,8 +268,13 @@
                 <h1>Elements</h1>
             </div>
             <div id="element-list">
-                <select id="element-list-select" size="10">
-                </select>
+                <div id="element-list-select"></div>
+                <div id="layer-controls">
+                    <button id="layer-down-button" title="Move layer down">Layer -</button>
+                    <button id="layer-up-button" title="Move layer up">Layer +</button>
+                    <button id="layer-bottom-button" title="Send to bottom">Bottom</button>
+                    <button id="layer-top-button" title="Send to top">Top</button>
+                </div>
             </div>
         </div>
 
@@ -254,6 +291,91 @@
                     Search</button>
             </div>
             <div id="emote-search-results">
+            </div>
+        </div>
+
+        <div id="bttv-search-modal" class="window">
+            <div class="window-header" id="bttv-search-header">
+                <h1>Search emote on BTTV</h1>
+            </div>
+            <div id="emote-search">
+                <input type="text" name="bttv-search-input" id="bttv-search-input" placeholder="Search emotes">
+                <button id="bttv-search-button" onclick="search_bttv_emotes()">
+                    Search</button>
+            </div>
+            <div id="bttv-search-results">
+            </div>
+        </div>
+
+        <div id="image-upload-modal" class="window">
+            <div class="window-header" id="image-upload-header">
+                <h1>Add Image</h1>
+            </div>
+            <div id="image-upload-container" class="media-upload-container">
+                <div id="image-upload-url-section" class="media-upload-url-section">
+                    <h3>From URL</h3>
+                    <input type="text" class="media-upload-url-input" name="image-upload-url-input" id="image-upload-url-input"
+                           placeholder="https://example.com/image.png" title="Image URL">
+                    <button id="image-upload-url-button" class="media-upload-url-button" title="Add image from URL">
+                        Add from URL
+                    </button>
+                </div>
+                <div id="image-upload-file-section" class="media-upload-file-section">
+                    <h3>From Device</h3>
+                    <input type="file" class="media-upload-file-input" name="image-upload-file-input" id="image-upload-file-input"
+                           accept="image/*" title="Select image file">
+                    <label id="image-upload-file-label" class="media-upload-file-label" for="image-upload-file-input">
+                        Choose file or drag & drop
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="audio-upload-modal" class="window">
+            <div class="window-header" id="audio-upload-header">
+                <h1>Add Audio</h1>
+            </div>
+            <div id="audio-upload-container" class="media-upload-container">
+                <div class="media-upload-url-section">
+                    <h3>From URL</h3>
+                    <input type="text" class="media-upload-url-input" id="audio-upload-url-input"
+                           placeholder="https://example.com/audio.mp3" title="Audio URL">
+                    <button id="audio-upload-url-button" class="media-upload-url-button" title="Add audio from URL">
+                        Add from URL
+                    </button>
+                </div>
+                <div class="media-upload-file-section">
+                    <h3>From Device</h3>
+                    <input type="file" class="media-upload-file-input" id="audio-upload-file-input"
+                           accept="audio/*" title="Select audio file">
+                    <label id="audio-upload-file-label" class="media-upload-file-label" for="audio-upload-file-input">
+                        Choose file or drag & drop
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="video-upload-modal" class="window">
+            <div class="window-header" id="video-upload-header">
+                <h1>Add Video</h1>
+            </div>
+            <div id="video-upload-container" class="media-upload-container">
+                <div class="media-upload-url-section">
+                    <h3>From URL</h3>
+                    <input type="text" class="media-upload-url-input" id="video-upload-url-input"
+                           placeholder="https://example.com/video.mp4" title="Video URL">
+                    <button id="video-upload-url-button" class="media-upload-url-button" title="Add video from URL">
+                        Add from URL
+                    </button>
+                </div>
+                <div class="media-upload-file-section">
+                    <h3>From Device</h3>
+                    <input type="file" class="media-upload-file-input" id="video-upload-file-input"
+                           accept="video/*" title="Select video file">
+                    <label id="video-upload-file-label" class="media-upload-file-label" for="video-upload-file-input">
+                        Choose file or drag & drop
+                    </label>
+                </div>
             </div>
         </div>
 

@@ -27,8 +27,9 @@ $(document).ready(() => {
 });
 
 function process_emote_search_result(data, offset = 0) {
-    if (data.emotes === null) throw new Error("No emotes found");
+    if (!data || data.emotes == null) return [];
     if (data.emotes.__typename !== "EmoteSearchResult") throw new Error("Invalid emote search result: " + data.emotes.__typename);
+    if (!Array.isArray(data.emotes.items) || data.emotes.items.length === 0) return [];
     let emotes = data.emotes;
     let emote_list = [];
     for (let i = 0; i < emotes.items.length; i++) {
@@ -80,6 +81,15 @@ function add_emote(index) {
     close_modal();
 }
 
+function show_emote_search_message(message) {
+    let results = $("#emote-search-results");
+    results.innerHTML = "";
+    let div = document.createElement("div");
+    div.className = "emote-search-empty";
+    div.textContent = message;
+    results.appendChild(div);
+}
+
 function search_emotes(page_limit = 40) {
     $("#emote-search-results").innerHTML = "";
     let search_input = $("#emote-search-input");
@@ -88,15 +98,19 @@ function search_emotes(page_limit = 40) {
     search_input.enabled = false;
     document.body.style.cursor = "wait";
     search_emote(query, emote_search_page).then((data) => {
+        if (data.status === 400 || data.status === 404) return null;
         if (data.status !== 200) throw new Error("Invalid status code: " + data.status);
         if (data.ok !== true) throw new Error("Invalid status: " + data.statusText);
 
         return data.json();
     }).then(result => {
-
         search_input.enabled = true;
-        let emotes = process_emote_search_result(result.data, emote_search_page * page_limit);
+        let emotes = result ? process_emote_search_result(result.data, emote_search_page * page_limit) : [];
         emote_cache = emotes;
+        if (emotes.length === 0) {
+            show_emote_search_message(`No 7TV emotes found for "${query}"`);
+            return;
+        }
         for (let i = 0; i < emotes.length; i++) {
             let emote = emotes[i];
             let div = document.createElement("div");
@@ -107,7 +121,7 @@ function search_emotes(page_limit = 40) {
         }
     }).catch((err) => {
         search_input.enabled = true;
-        console.error(err);
-        alert(err);
+        console.error('[7TV] search failed', err);
+        show_emote_search_message("Search failed. Try again.");
     }).finally(() => { document.body.style.cursor = "default"; });
 }

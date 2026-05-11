@@ -44,6 +44,13 @@ class editor extends viewer {
     this.z_index = $('#z-index');
     this.opacity = $('#opacity');
     this.visibility = $('#visibility');
+    this.transition_mode = $('#transition-mode');
+    this.transition_duration = $('#transition-duration');
+    this.rotation_snap = $('#rotation-snap');
+    this.layer_down_button = $('#layer-down-button');
+    this.layer_up_button = $('#layer-up-button');
+    this.layer_bottom_button = $('#layer-bottom-button');
+    this.layer_top_button = $('#layer-top-button');
     this.element_name = $('#element-name');
     this.element_list = $('#element-list-select');
     this.connection_indicator = $('#connection-indicator');
@@ -66,6 +73,8 @@ class editor extends viewer {
     this.last_cursor_position = [0, 0];
     this.move_start = [0, 0];
     this.cursor_map = new Map(); // map of user ids to cursor positions to show where other users are
+    this.resize_handle = null;
+    this.resize_start_pos = null;
 
     let opts = document.getElementsByClassName('pivot-option');
     this.pivot_options = [];
@@ -89,6 +98,10 @@ class editor extends viewer {
     $(this.element_name).on('input', () => this.on_element_name_changed());
     $(this.canvas_width).on('change', () => this.on_resize());
     $(this.canvas_height).on('change', () => this.on_resize());
+    $(this.rotation_snap).on('change', () => save_settings());
+    $(this.transition_mode).on('change', () => this.on_transition_mode_changed());
+    $(this.transition_duration).on('input', () => this.on_transition_duration_changed());
+    $(this.transition_duration).on('change', () => this.on_transition_duration_changed());
     $(this.height).on('input', () => this.on_element_size_changed());
     $(this.width).on('input', () => this.on_element_size_changed());
     $(this.pos_x).on('input', () => this.on_element_pos_changed());
@@ -96,14 +109,10 @@ class editor extends viewer {
     $(this.opacity).on('input', () => this.on_opacity_changed());
     $(this.z_index).on('change', () => this.on_z_index_changed());
     $(this.visibility).on('change', () => this.on_visibility_changed());
-    $(this.element_list).on('change', () => {
-      let element = this.elements.get(this.element_list.value);
-      if (element) {
-        this.select_element(element);
-      } else {
-        this.rebuild_element_list(); // element was deleted and shouldn't be in the list anymore
-      }
-    });
+    $(this.layer_down_button).on('click', () => this.move_selected_layer(-1));
+    $(this.layer_up_button).on('click', () => this.move_selected_layer(1));
+    $(this.layer_bottom_button).on('click', () => this.send_selected_layer_to_bottom());
+    $(this.layer_top_button).on('click', () => this.send_selected_layer_to_top());
 
     this.canvas_width.value = '1920';
     this.canvas_height.value = '1080';
@@ -164,6 +173,20 @@ class editor extends viewer {
       );
       this.ctx.strokeStyle = 'green';
       this.ctx.stroke();
+    }
+
+    // Draw resize handles for selected element
+    if (this.selected_element && this.selected_element.is_resizable && this.selected_element.is_resizable()) {
+      let tf = this.selected_element.tf();
+      draw_resize_handles(
+        this.ctx,
+        tf.x,
+        tf.y,
+        tf.width,
+        tf.height,
+        this.editor_zoom,
+        this.editor_offset
+      );
     }
   }
 
@@ -267,6 +290,9 @@ class editor extends viewer {
       let new_rotation = Math.round(
         this.initial_element_size.rotation + (angle * 180) / Math.PI
       );
+      if (!e.shiftKey) {
+        new_rotation = snap_value(new_rotation, Number(this.rotation_snap.value));
+      }
 
       switch (this.mode_axis) {
         case MODE_AXIS.X:
@@ -392,6 +418,32 @@ class editor extends viewer {
 
   on_mouse_down(e) {
     if (this.current_mode === EDIT_MODE.NONE) {
+      // Check for resize handle click first
+      if (this.selected_element && this.selected_element.is_resizable && this.selected_element.is_resizable()) {
+        let tf = this.selected_element.tf();
+        let rect = this.editor_canvas.getBoundingClientRect();
+        let local_x = (e.clientX - rect.left) / this.scale_factor / this.editor_zoom;
+        let local_y = (e.clientY - rect.top) / this.scale_factor / this.editor_zoom;
+        let handle = get_resize_handle_at_pos(
+          tf.x,
+          tf.y,
+          tf.width,
+          tf.height,
+          1.0,
+          [0, 0],
+          local_x,
+          local_y
+        );
+
+        if (handle && e.button == 0) {
+          this.resize_handle = handle;
+          this.resize_start_pos = [local_x, local_y];
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+
       // if left mouse button is pressed
       if (e.button == 0) {
         if (
@@ -427,6 +479,14 @@ class editor extends viewer {
   }
 
   on_mouse_up(_e) {
+    if (this.resize_handle) {
+      this.resize_handle = null;
+      this.resize_start_pos = null;
+      if (this.selected_element) {
+        send_command_transform_element(this, this.selected_element);
+        this.update_selected_element();
+      }
+    }
     this.leave_mode();
     this.dragging_element = false;
   }
@@ -446,6 +506,22 @@ class editor extends viewer {
       (this.last_move_event.clientY - rect.top) /
       this.scale_factor /
       this.editor_zoom;
+
+    // Handle resize
+    if (this.resize_handle && this.selected_element) {
+      let current_x = this.last_move_event.localX;
+      let current_y = this.last_move_event.localY;
+      let dx = current_x - this.resize_start_pos[0];
+      let dy = current_y - this.resize_start_pos[1];
+
+      if (dx !== 0 || dy !== 0) {
+        apply_resize(this.resize_handle, dx, dy, this.selected_element);
+        this.resize_start_pos = [current_x, current_y];
+        this.selected_element.update();
+        this.update_selected_element();
+      }
+      return;
+    }
 
     if (this.initial_position.x == -1 && this.current_mode != EDIT_MODE.NONE) {
       this.initial_position.x = this.mouse_pos[0];
@@ -495,11 +571,64 @@ class editor extends viewer {
     }
   }
 
+  move_selected_layer(delta) {
+    if (!this.selected_element) return;
+    this.selected_element.tf().z_index = Number(this.selected_element.tf().z_index) + delta;
+    this.selected_element.update();
+    send_command_transform_element(this, this.selected_element);
+    this.update_selected_element();
+    this.rebuild_element_list();
+  }
+
+  send_selected_layer_to_top() {
+    if (!this.selected_element) return;
+    let highest_layer = 0;
+    for (let [_, el] of this.elements) {
+      highest_layer = Math.max(highest_layer, Number(el.tf().z_index));
+    }
+    this.selected_element.tf().z_index = highest_layer + 1;
+    this.selected_element.update();
+    send_command_transform_element(this, this.selected_element);
+    this.update_selected_element();
+    this.rebuild_element_list();
+  }
+
+  send_selected_layer_to_bottom() {
+    if (!this.selected_element) return;
+    let lowest_layer = 0;
+    for (let [_, el] of this.elements) {
+      lowest_layer = Math.min(lowest_layer, Number(el.tf().z_index));
+    }
+    this.selected_element.tf().z_index = lowest_layer - 1;
+    this.selected_element.update();
+    send_command_transform_element(this, this.selected_element);
+    this.update_selected_element();
+    this.rebuild_element_list();
+  }
+
   on_visibility_changed() {
     if (this.selected_element) {
       this.selected_element.tf().visible = this.visibility.checked;
       this.selected_element.update();
       send_command_transform_element(this, this.selected_element);
+    }
+  }
+
+  on_transition_mode_changed() {
+    if (this.selected_element) {
+      this.selected_element.data.transition_mode = this.transition_mode.value;
+      this.selected_element.update();
+      send_command_update_element(this, this.selected_element);
+    }
+  }
+
+  on_transition_duration_changed() {
+    if (this.selected_element) {
+      let v = parseInt(this.transition_duration.value, 10);
+      if (isNaN(v) || v < 0) v = 0;
+      this.selected_element.data.transition_duration = v;
+      this.selected_element.update();
+      send_command_update_element(this, this.selected_element);
     }
   }
 
@@ -561,20 +690,78 @@ class editor extends viewer {
     for (let [_, el] of this.elements) {
       elements.push(el);
     }
-
-    // reverse array
     elements.reverse();
-
     elements.sort((a, b) => b.tf().z_index - a.tf().z_index);
     elements.forEach((el) => {
-      let option = document.createElement('option');
-      option.value = el.id();
-      option.innerHTML = el.data.name;
-      this.element_list.appendChild(option);
+      let row = document.createElement('div');
+      row.className = 'element-list-row';
+      row.dataset.id = el.id();
+      if (this.selected_element && this.selected_element.id() === el.id()) {
+        row.classList.add('selected');
+      }
+      if (!el.tf().visible) {
+        row.classList.add('element-hidden');
+      }
+
+      let label = document.createElement('span');
+      label.className = 'element-list-label';
+      label.textContent = `[${el.tf().z_index}] ${el.data.name}`;
+      label.title = el.data.name;
+      row.appendChild(label);
+
+      let eye = document.createElement('button');
+      eye.className = 'element-list-icon element-list-eye';
+      eye.title = el.tf().visible ? 'Hide' : 'Show';
+      eye.innerHTML = el.tf().visible
+        ? '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M2 4l2-2 18 18-2 2-3.5-3.5A12 12 0 0112 19C5 19 1 12 1 12a18 18 0 014.4-5.2L2 4zm10 5a3 3 0 013 3 3 3 0 01-.2 1L11 9.2A3 3 0 0112 9zm0-4c7 0 11 7 11 7s-1.4 2.5-4 4.6L15.4 9.4A5 5 0 0012 7a5 5 0 00-1.6.3L8.6 5.5A12 12 0 0112 5z"/></svg>';
+      eye.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggle_element_visibility(el);
+      });
+      row.appendChild(eye);
+
+      let trash = document.createElement('button');
+      trash.className = 'element-list-icon element-list-trash';
+      trash.title = 'Delete';
+      trash.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M9 3v1H4v2h1v14a2 2 0 002 2h10a2 2 0 002-2V6h1V4h-5V3H9zm2 5h2v10h-2V8zm-4 0h2v10H7V8zm8 0h2v10h-2V8z"/></svg>';
+      trash.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.delete_element(el);
+      });
+      row.appendChild(trash);
+
+      row.addEventListener('click', () => {
+        let target = this.elements.get(el.id());
+        if (target) this.select_element(target);
+      });
+
+      this.element_list.appendChild(row);
     });
-    this.element_list.value = this.selected_element
-      ? this.selected_element.id()
-      : '';
+  }
+
+  toggle_element_visibility(el) {
+    el.tf().visible = !el.tf().visible;
+    el.update();
+    if (this.selected_element && this.selected_element.id() === el.id()) {
+      this.update_selected_element();
+    }
+    send_command_update_element(this, el);
+    this.rebuild_element_list();
+  }
+
+  delete_element(el) {
+    let index = this.tickable_elements.indexOf(el);
+    if (index > -1) this.tickable_elements.splice(index, 1);
+    el.html.remove();
+    this.elements.delete(el.id());
+    send_command_delete_element(this, el.id());
+    if (this.selected_element && this.selected_element.id() === el.id()) {
+      this.select_element(null);
+    }
+    this.rebuild_element_list();
   }
 
   add_element(element) {
@@ -594,7 +781,7 @@ class editor extends viewer {
     if (this.selected_element)
       this.selected_element.html.classList.remove('selected-element');
 
-    this.element_list.value = element ? element.id() : '';
+    this.rebuild_element_list();
 
     // hide all element settings
     this.selected_element = element;
@@ -627,6 +814,11 @@ class editor extends viewer {
     this.z_index.value = Number(this.selected_element.tf().z_index);
     this.opacity.value = this.selected_element.tf().opacity * 100;
     this.visibility.checked = this.selected_element.tf().visible;
+    this.transition_mode.value = this.selected_element.data.transition_mode || 'fade';
+    this.transition_duration.value =
+      this.selected_element.data.transition_duration != null
+        ? this.selected_element.data.transition_duration
+        : 500;
     this.element_name.value = this.selected_element.data.name;
 
     this.pivot_options.forEach((option) => option.classList.remove('selected'));

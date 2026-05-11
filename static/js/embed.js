@@ -29,11 +29,26 @@ function embed_player() {
                 width: "100%",
                 height: "100%",
                 channel: channel,
-                parent: [document.location.hostname]
+                parent: [document.location.hostname],
+                playsinline: true,
+                muted: true,
+                autoplay: true,
+                lowLatency: true
             };
             $('#player').innerHTML = ""; // remove old embeds
             player = new Twitch.Player("player", options);
-            player.setVolume(0.2);
+            player.addEventListener(Twitch.Player.READY, () => {
+                try {
+                    player.setMuted(false);
+                    player.setVolume(0.2);
+                    if (typeof player.seek === 'function' && typeof player.getDuration === 'function') {
+                        let d = player.getDuration();
+                        if (d && isFinite(d)) player.seek(d);
+                    }
+                } catch (e) {
+                    console.warn('[embed] post-ready seek/volume failed', e);
+                }
+            });
         }
     }
     save_settings();

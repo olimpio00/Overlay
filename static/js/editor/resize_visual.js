@@ -22,10 +22,13 @@ function draw_resize_handles(ctx, x, y, width, height, zoom, offset) {
   ctx.save();
   
   // Calculate screen positions
-  let sx = x * zoom + offset[0];
-  let sy = y * zoom + offset[1];
-  let sw = width * zoom;
-  let sh = height * zoom;
+  // The editor normalizes mouse coords into world coordinates and the canvas
+  // internal coordinate space matches world coords. Do not apply zoom/offset
+  // here — draw using world coordinates so drawing matches hit-testing.
+  let sx = x;
+  let sy = y;
+  let sw = width;
+  let sh = height;
 
   // Draw outer rectangle
   ctx.strokeStyle = '#00ff00';

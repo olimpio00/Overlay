@@ -175,18 +175,25 @@ class editor extends viewer {
       this.ctx.stroke();
     }
 
-    // Draw resize handles for selected element
-    if (this.selected_element && this.selected_element.is_resizable && this.selected_element.is_resizable()) {
+    // Draw resize handles for selected element only if it's valid and visible
+    if (
+      this.selected_element &&
+      this.selected_element.html &&
+      this.selected_element.is_resizable &&
+      this.selected_element.is_resizable()
+    ) {
       let tf = this.selected_element.tf();
-      draw_resize_handles(
-        this.ctx,
-        tf.x,
-        tf.y,
-        tf.width,
-        tf.height,
-        this.editor_zoom,
-        this.editor_offset
-      );
+      if (tf.width > 0 && tf.height > 0 && this.selected_element.tf().visible) {
+        draw_resize_handles(
+          this.ctx,
+          tf.x,
+          tf.y,
+          tf.width,
+          tf.height,
+          this.editor_zoom,
+          this.editor_offset
+        );
+      }
     }
   }
 

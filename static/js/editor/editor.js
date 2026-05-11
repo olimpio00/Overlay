@@ -436,8 +436,8 @@ class editor extends viewer {
           tf.y,
           tf.width,
           tf.height,
-          1.0,
-          [0, 0],
+          this.editor_zoom,
+          this.editor_offset,
           local_x,
           local_y
         );

@@ -51,10 +51,13 @@ function draw_resize_handles(ctx, x, y, width, height, zoom, offset) {
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 1;
 
-  let size = RESIZE_HANDLE_SIZE / 2;
+  // Keep handle visual size approximately constant on screen by scaling
+  // inversely with zoom (zoom < 1 => larger world-size handles)
+  let drawSize = Math.max(4, RESIZE_HANDLE_SIZE / (zoom || 1));
+  let half = drawSize / 2;
   handles.forEach(h => {
-    ctx.fillRect(h.x - size, h.y - size, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
-    ctx.strokeRect(h.x - size, h.y - size, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+    ctx.fillRect(h.x - half, h.y - half, drawSize, drawSize);
+    ctx.strokeRect(h.x - half, h.y - half, drawSize, drawSize);
   });
 
   ctx.restore();
@@ -74,8 +77,11 @@ function get_resize_handle_at_pos(x, y, width, height, zoom, offset, mouse_x, mo
   ];
 
   for (let handle of handles) {
+    // Convert desired screen detection radius to world space so radius
+    // remains approximately constant while zooming.
+    let detectionRadiusWorld = RESIZE_DETECTION_RADIUS / (zoom || 1);
     let dist = Math.hypot(handle.x - mouse_x, handle.y - mouse_y);
-    if (dist <= RESIZE_DETECTION_RADIUS) {
+    if (dist <= detectionRadiusWorld) {
       return handle;
     }
   }

@@ -90,7 +90,7 @@ class viewer {
     }
 
     on_error(e) {
-        console.log(e);
+        // error handling
         this.connected = false;
         this.on_connection_changed();
     }
@@ -110,7 +110,6 @@ class viewer {
 
     on_open(e) {
         this.connected = true;
-        console.log('[viewer] WS open, sending handshake', { session: this.session_id });
         this.socket.send(JSON.stringify({ session: this.session_id }));
         this.on_connection_changed();
     }
@@ -128,13 +127,13 @@ class viewer {
             alert(data.error);
             return;
         } else if (data.type === undefined) {
-            console.log('[viewer] initial state received', Object.keys(data).length, 'elements');
+            // initial state received
             this.elements.forEach(element => command_delete_element(this, element));
             for (const [_, args] of Object.entries(data)) {
                 command_add_element(this, args);
             }
         } else {
-            console.log('[viewer] command', data.type, data.args && data.args.id);
+            // command received
             this.parse_and_run_command(data, this);
         }
     }

@@ -95,7 +95,6 @@ class audio_element extends element {
         try {
             let _tmp = new URL(url);
         } catch (e) {
-            console.log("Invalid URL: ", url);
             return;
         }
 

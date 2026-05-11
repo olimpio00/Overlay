@@ -29,9 +29,8 @@ class iframe_element extends element {
     this.block_events = data.block_events;
 
     if (parent.is_editor()) {
-      $(this.html).on('load', (event) => {
-        console.log(event);
-      });
+      // load event handled if needed
+      $(this.html).on('load', (event) => { });
     }
   }
 
@@ -42,7 +41,6 @@ class iframe_element extends element {
     try {
       let _tmp = new URL(url);
     } catch (e) {
-      console.log('Invalid URL: ', url);
       return false;
     }
 

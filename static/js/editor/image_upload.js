@@ -32,7 +32,6 @@ $(document).ready(() => {
     url_button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('[IMAGE] URL button clicked');
       handle_image_url_submit();
     }, true);
   }
@@ -43,7 +42,6 @@ $(document).ready(() => {
       e.preventDefault();
       e.stopPropagation();
       window.file_picker_active = false;
-      console.log('[IMAGE] File input change event, files:', file_input.files.length);
       if (file_input.files.length > 0) {
         handle_image_file_upload(file_input.files[0]);
       }
@@ -80,8 +78,7 @@ $(document).ready(() => {
       e.stopPropagation();
       file_label.classList.remove('drag-over');
       
-      if (e.dataTransfer.files.length > 0) {
-        console.log('[IMAGE] File dropped');
+        if (e.dataTransfer.files.length > 0) {
         handle_image_file_upload(e.dataTransfer.files[0]);
       }
     }, true);
@@ -90,7 +87,6 @@ $(document).ready(() => {
     file_label.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('[IMAGE] Label clicked, opening file picker');
       window.file_picker_active = true;
       if (file_input) {
         file_input.click();
